@@ -1,0 +1,11 @@
+options:
+  storage_root:
+    type: string
+    default: /srv/data
+    description: The root path where exported directories will be created
+  export_options:
+    type: string
+    default: rw,sync,no_root_squash,no_all_squash
+    description: The default export options
+
+
