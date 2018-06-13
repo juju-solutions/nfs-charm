@@ -68,10 +68,7 @@ def nfs_relation_changed():
             # id's consistent, we can't really know what user will need
             # to read/write to this path. Unfortunately we don't really
             # have a choice.
-            os.chmod(path,
-                     os.stat.S_IWUSR | os.stat.S_IWUSR | os.stat.S_IXUSR |
-                     os.stat.S_IRGRP | os.stat.S_IWGRP | os.stat.S_IXGRP |
-                     os.stat.S_IROTH | os.stat.S_IWOTH | os.stat.S_IXOTH)
+            os.chmod(path, 0o777)
 
         template_context['mounts'].append({
             'export_name': mount['application_name'],

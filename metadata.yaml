@@ -13,3 +13,5 @@ provides:
     interface: mount
 series:
   - xenial
+bugs-url: https://github.com/hyperbolic2346/nfs-charm/issues
+homepage: https://github.com/hyperbolic2346/nfs-charm
