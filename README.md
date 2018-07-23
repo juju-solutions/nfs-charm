@@ -20,7 +20,7 @@ in the local data location.
 
 ### Kubernetes
 
-        conjure-up canonical-kubernetes
+	conjure-up canonical-kubernetes
 	juju deploy nfs
 	juju add-relation nfs kubernetes-worker
 
@@ -60,7 +60,7 @@ Edit /etc/apparmor.d/lxc/lxc-default and add the following three lines to it:
 
 	mount fstype=nfs,
 	mount fstype=nfs4,
-        mount fstype=nfsd,
+	mount fstype=nfsd,
 	mount fstype=rpc_pipefs,
 
 after which:
