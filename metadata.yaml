@@ -12,4 +12,6 @@ provides:
   nfs:
     interface: mount
 series:
+  - bionic
   - xenial
+  - trusty

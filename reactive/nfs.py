@@ -1,6 +1,7 @@
 import os
 
 from charmhelpers.core import hookenv
+from charmhelpers.core.host import service_start, service_running
 from charmhelpers.fetch import apt_install
 from charms.reactive import when, when_not, set_flag, clear_flag
 from charms.reactive.relations import endpoint_from_flag
@@ -25,15 +26,23 @@ def install_nfs_deb():
 @when('refresh_nfs_mounts')
 def read_nfs_mounts():
     hookenv.status_set('maintenance', 'Updating NFS mounts')
-    try:
-        command = ['exportfs', '-ra']
-        hookenv.log('Executing {}'.format(command))
-        check_output(command)
-        clear_flag('refresh_nfs_mounts')
-    except CalledProcessError as e:
-        hookenv.log(e)
-        hookenv.log('Failed to reread nfs mounts. Will attempt again next update.')  # noqa
-        return
+    if service_running('nfs-kernel-server'):
+        try:
+            command = ['exportfs', '-ra']
+            hookenv.log('Executing {}'.format(command))
+            check_output(command)
+            clear_flag('refresh_nfs_mounts')
+        except CalledProcessError as e:
+            hookenv.log(e)
+            hookenv.log('Failed to reread nfs mounts. Will attempt again next update.')  # noqa
+            return
+    else:
+        try:
+            service_start('nfs-kernel-server')
+        except CalledProcessError as e:
+            hookenv.log(e)
+            hookenv.log('Unable to start service nfs-kernel-server! Will attempt again next update.') # noqa
+            return
 
 
 @when_not('nfs.changed', 'nfs_refresh_mounts')
