@@ -1,6 +1,6 @@
 # Overview
 
-This is the NFS charm built on xenial. It creates an NFSv4(http://nfs.sourceforge.net/)
+This is the NFS charm with support for trusty, xenial, and bionic. It creates an NFSv4(http://nfs.sourceforge.net/)
 server using the local filesystem as a backing store. There is no clustering or
 federation, so multiple units would result in multiple nfs servers. This is NOT
 a highly available server.
