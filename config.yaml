@@ -5,7 +5,9 @@ options:
     description: The root path where exported directories will be created
   export_options:
     type: string
-    default: rw,sync,no_root_squash,no_all_squash
+    default: rw,sync,no_root_squash,no_all_squash,no_subtree_check
     description: The default export options
-
-
+  initial_daemon_count:
+    type: int
+    default: 40
+    description: The number of nfs daemons to run on startup
