@@ -90,7 +90,8 @@ def nfs_relation_changed():
 
     config = hookenv.config()
     storage_root = config.get('storage_root')
-    options = config.get('export_options')
+    export_options = config.get('export_options')
+    mount_options = config.get('mount_options')
 
     # get desired mounts
     mount_list = mount_interface.get_mount_requests()
@@ -118,7 +119,8 @@ def nfs_relation_changed():
             'mountpoint': path,
             'identifier': mount['identifier'],
             'fstype': 'nfs',
-            'options': options,
+            'export_options': export_options,
+            'options': mount_options,
         })
 
     if len(template_context['mounts']) == 0:
