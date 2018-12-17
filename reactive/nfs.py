@@ -71,7 +71,7 @@ def read_nfs_mounts():
             return
 
 
-@when_not('nfs.changed', 'nfs_refresh_mounts')
+@when_not('nfs.changed', 'refresh_nfs_mounts')
 @when('nfs_installed')
 def idle_status():
     hookenv.status_set('active', 'NFS ready')
