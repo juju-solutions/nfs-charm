@@ -11,6 +11,9 @@ subordinate: false
 provides:
   nfs:
     interface: mount
+  nrpe-external-master:
+    interface: nrpe-external-master
+    scope: container
 series:
   - bionic
   - xenial
