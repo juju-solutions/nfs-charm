@@ -2,6 +2,7 @@ repo: https://github.com/hyperbolic2346/nfs-charm.git
 includes:
   - 'layer:basic'
   - 'interface:mount'
+  - 'interface:nrpe-external-master'
 exclude:
   - builds
   - deps
