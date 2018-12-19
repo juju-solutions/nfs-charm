@@ -1,4 +1,3 @@
-from collections import defaultdict
 import os
 
 from charmhelpers.core import hookenv
@@ -97,8 +96,8 @@ def nfs_relation_changed():
     # get desired mounts
     mount_list = mount_interface.get_mount_requests()
 
-    mount_addresses = defaultdict(set)
-    mount_responses = []
+    template_context = {}
+    template_context['mounts'] = []
 
     for mount in mount_list:
         if not mount['application_name']:
@@ -114,27 +113,21 @@ def nfs_relation_changed():
             # have a choice.
             os.chmod(path, 0o777)
 
-        mount_addresses[path].update(mount['addresses'])
-        mount_responses.append({
+        template_context['mounts'].append({
             'export_name': mount['application_name'],
+            'addresses': mount['addresses'],
             'mountpoint': path,
             'identifier': mount['identifier'],
             'fstype': 'nfs',
+            'export_options': export_options,
             'options': mount_options,
         })
 
-    if mount_addresses:
-        template_context = {
-            'mounts': [{
-                'mountpoint': path,
-                'addresses': sorted(mount_addresses[path]),
-                'export_options': export_options,
-            } for path in sorted(mount_addresses)],
-        }
+    if len(template_context['mounts']) == 0:
+        os.remove(EXPORT_FILENAME)
+    else:
         render('export.tpl', EXPORT_FILENAME, template_context)
         hookenv.log('rendering template to {}'.format(EXPORT_FILENAME))
-    else:
-        os.remove(EXPORT_FILENAME)
 
     set_flag('refresh_nfs_mounts')
-    mount_interface.configure(mount_responses)
+    mount_interface.configure(template_context['mounts'])
