@@ -15,6 +15,13 @@ options:
     type: int
     default: 40
     description: The number of nfs daemons to run on startup
+  active_units:
+    type: string
+    default: ""
+    description: >
+      If set, a comma-separated list of unit names that should publish data
+      on the 'mount' relation.  This makes it possible to transition
+      gracefully between instances of this application.
   nagios_context:
     default: "juju"
     type: string
