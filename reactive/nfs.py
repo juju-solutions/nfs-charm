@@ -10,7 +10,7 @@ from charmhelpers.core.host import (
 )
 from charmhelpers.fetch import apt_install
 from charms.reactive import when, when_not, when_any, set_flag, clear_flag
-from charms.reactive.relations import endpoint_from_flag
+from charms.reactive.relations import endpoint_from_flag, endpoint_from_name
 
 from subprocess import check_output, CalledProcessError
 
@@ -58,7 +58,7 @@ def update_config():
           'config.changed.mount_options',
           'config.changed.active_units')
 def read_nfs_mounts():
-    mount_interface = endpoint_from_flag('endpoint.nfs.joined')
+    mount_interface = endpoint_from_name('nfs')
     if mount_interface is None:
         hookenv.log('No mount interface, bailing')
         return
