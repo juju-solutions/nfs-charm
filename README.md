@@ -67,6 +67,11 @@ you can remove the old unit:
 	juju remove-unit <old unit ID>
 	juju config nfs active_units=
 
+Note that the migration process is quite abrupt: the server does not wait
+for all clients on related units to unmount before stopping.  Consider
+arranging separately for downtime of clients that might write to their NFS
+mounts.
+
 ## Known Limitations and Issues
 
 No high availability story
