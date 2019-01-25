@@ -1,5 +1,6 @@
 from collections import defaultdict
 import os
+import re
 
 from charmhelpers.core import hookenv
 from charmhelpers.core.host import (
@@ -87,7 +88,7 @@ def read_nfs_mounts():
         peer_endpoint = endpoint_from_name('peer')
         if peer_endpoint is not None:
             peer_info = peer_endpoint.get_peer_info()
-            for active_unit in active_units.split(','):
+            for active_unit in re.split(r'\s*,\s*', active_units):
                 if active_unit in peer_info:
                     active_ip = peer_info[active_unit]['address']
                     hookenv.log(
