@@ -73,10 +73,10 @@ def read_nfs_mounts():
             return
 
     config = hookenv.config()
-    storage_root = config.get('storage_root')
-    mount_options = config.get('mount_options')
+    storage_root = config['storage_root']
+    mount_options = config['mount_options']
     active_ip = None
-    active_units = config.get('active_units', '')
+    active_units = config['active_units']
     need_service = True
 
     if active_units:
