@@ -54,15 +54,12 @@ def update_config():
         service_restart('nfs-kernel-server')
 
 
+@when('endpoint.nfs.joined')
 @when_any('refresh_nfs_mounts',
           'config.changed.mount_options',
           'config.changed.active_units')
 def read_nfs_mounts():
-    mount_interface = endpoint_from_name('nfs')
-    if mount_interface is None:
-        hookenv.log('No mount interface, bailing')
-        return
-
+    mount_interface = endpoint_from_flag('endpoint.nfs.joined')
     hookenv.status_set('maintenance', 'Updating NFS mounts')
     service_is_running = service_running('nfs-kernel-server')
     if service_is_running:
