@@ -112,31 +112,36 @@ def read_nfs_mounts():
 
     if active_ip is not None:
         # Publish details of the active unit.
-        mount_responses = []
-        for mount in mount_interface.get_mount_requests():
-            if not mount['application_name']:
-                continue
-            path = os.path.join(storage_root, mount['application_name'])
-            mount_responses.append({
-                'export_name': mount['application_name'],
-                'hostname': active_ip,
-                'mountpoint': path,
-                'identifier': mount['identifier'],
-                'fstype': 'nfs',
-                'options': mount_options,
-            })
-        mount_interface.configure(mount_responses)
+        mount_response_common = {
+            'hostname': active_ip,
+            'fstype': 'nfs',
+            'options': mount_options,
+        }
     else:
         # There are no active units at all.  Clear out previous responses so
         # that requirers know they need to unmount.
         hookenv.log('No active units')
-        for relation in mount_interface.relations:
-            relation.to_publish_raw.update({
-                'mountpoint': None,
-                'hostname': None,
-                'fstype': None,
-                'options': None,
-            })
+        mount_response_common = {
+            'hostname': None,
+            'fstype': None,
+            'options': None,
+        }
+    mount_responses = []
+    for mount in mount_interface.get_mount_requests():
+        if not mount['application_name']:
+            continue
+        if active_ip is not None:
+            path = os.path.join(storage_root, mount['application_name'])
+        else:
+            path = None
+        mount_response = {
+            'export_name': mount['application_name'],
+            'identifier': mount['identifier'],
+            'mountpoint': path,
+        }
+        mount_response.update(mount_response_common)
+        mount_responses.append(mount_response)
+    mount_interface.configure(mount_responses)
 
     # Stop nfs-kernel-server if this unit is inactive.
     if not need_service and service_is_running:
