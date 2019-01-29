@@ -42,6 +42,36 @@ The above example deploys OwnCloud personal cloud storage, and provides remote s
 	juju add-relation mysql:db wordpress:db
 	juju add-relation nfs:nfs wordpress:nfs
 
+## Migrating Storage
+
+To migrate storage from one NFS unit to another, first add the new unit in
+such a way as to avoid publishing it before it's ready:
+
+	juju config nfs active_units=<old unit ID>
+	juju add-unit nfs
+
+Now start the downtime:
+
+	juju config nfs active_units=none
+
+Wait for all clients to unmount, then move the underlying storage to the new
+unit in whatever way is appropriate for your deployment.
+
+Finish the downtime by publishing the new unit:
+
+	juju config nfs active_units=<new unit ID>
+
+After clients have mounted the new unit and you've checked that all is well,
+you can remove the old unit:
+
+	juju remove-unit <old unit ID>
+	juju config nfs active_units=
+
+Note that the migration process is quite abrupt: the server does not wait
+for all clients on related units to unmount before stopping.  Consider
+arranging separately for downtime of clients that might write to their NFS
+mounts.
+
 ## Known Limitations and Issues
 
 No high availability story

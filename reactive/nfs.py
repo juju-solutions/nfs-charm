@@ -1,12 +1,17 @@
 from collections import defaultdict
 import os
+import re
 
 from charmhelpers.core import hookenv
-from charmhelpers.core.host import service_start, service_running
-from charmhelpers.core.host import service_restart
+from charmhelpers.core.host import (
+    service_restart,
+    service_running,
+    service_start,
+    service_stop,
+)
 from charmhelpers.fetch import apt_install
 from charms.reactive import when, when_not, when_any, set_flag, clear_flag
-from charms.reactive.relations import endpoint_from_flag
+from charms.reactive.relations import endpoint_from_flag, endpoint_from_name
 
 from subprocess import check_output, CalledProcessError
 
@@ -50,26 +55,97 @@ def update_config():
         service_restart('nfs-kernel-server')
 
 
-@when('refresh_nfs_mounts')
+@when('endpoint.nfs.joined')
+@when_any('refresh_nfs_mounts',
+          'config.changed.mount_options',
+          'config.changed.active_units')
 def read_nfs_mounts():
+    mount_interface = endpoint_from_flag('endpoint.nfs.joined')
     hookenv.status_set('maintenance', 'Updating NFS mounts')
-    if service_running('nfs-kernel-server'):
+    service_is_running = service_running('nfs-kernel-server')
+    if service_is_running:
         try:
             command = ['exportfs', '-ra']
             hookenv.log('Executing {}'.format(command))
             check_output(command)
-            clear_flag('refresh_nfs_mounts')
         except CalledProcessError as e:
             hookenv.log(e)
             hookenv.log('Failed to reread nfs mounts. Will attempt again next update.')  # noqa
             return
+
+    config = hookenv.config()
+    storage_root = config['storage_root']
+    mount_options = config['mount_options']
+    active_ip = None
+    active_units = config['active_units']
+    need_service = True
+
+    if active_units:
+        # Work out which unit should be active so that we can publish its
+        # address on the mount relation.  We pick the first item in
+        # active_units that exists.
+        active_ip = None
+        peer_endpoint = endpoint_from_name('peer')
+        if peer_endpoint is not None:
+            peer_info = peer_endpoint.get_peer_info()
+            for active_unit in re.split(r'\s*,\s*', active_units):
+                if active_unit in peer_info:
+                    active_ip = peer_info[active_unit]['address']
+                    hookenv.log(
+                        'Active unit found: {} ({})'.format(
+                            active_unit, active_ip))
+                    break
     else:
+        active_ip = hookenv.unit_private_ip()
+    need_service = hookenv.unit_private_ip() == active_ip
+
+    # Start nfs-kernel-server if this unit is active.
+    if need_service and not service_is_running:
         try:
             service_start('nfs-kernel-server')
         except CalledProcessError as e:
             hookenv.log(e)
             hookenv.log('Unable to start service nfs-kernel-server! Will attempt again next update.') # noqa
             return
+
+    if active_ip is not None:
+        # Publish details of the active unit.
+        mount_response_common = {
+            'hostname': active_ip,
+            'fstype': 'nfs',
+            'options': mount_options,
+        }
+    else:
+        # There are no active units at all.  Clear out previous responses so
+        # that requirers know they need to unmount.
+        hookenv.log('No active units')
+        mount_response_common = {
+            'hostname': None,
+            'fstype': None,
+            'options': None,
+        }
+    mount_responses = []
+    for mount in mount_interface.get_mount_requests():
+        if not mount['application_name']:
+            continue
+        if active_ip is not None:
+            path = os.path.join(storage_root, mount['application_name'])
+        else:
+            path = None
+        mount_response = {
+            'export_name': mount['application_name'],
+            'identifier': mount['identifier'],
+            'mountpoint': path,
+        }
+        mount_response.update(mount_response_common)
+        mount_responses.append(mount_response)
+    mount_interface.configure(mount_responses)
+
+    # Stop nfs-kernel-server if this unit is inactive.
+    if not need_service and service_is_running:
+        service_stop('nfs-kernel-server')
+
+    clear_flag('refresh_nfs_mounts')
 
 
 @when_not('nfs.changed', 'refresh_nfs_mounts')
@@ -92,13 +168,11 @@ def nfs_relation_changed():
     config = hookenv.config()
     storage_root = config.get('storage_root')
     export_options = config.get('export_options')
-    mount_options = config.get('mount_options')
 
     # get desired mounts
     mount_list = mount_interface.get_mount_requests()
 
     mount_addresses = defaultdict(set)
-    mount_responses = []
 
     for mount in mount_list:
         if not mount['application_name']:
@@ -115,13 +189,6 @@ def nfs_relation_changed():
             os.chmod(path, 0o777)
 
         mount_addresses[path].update(mount['addresses'])
-        mount_responses.append({
-            'export_name': mount['application_name'],
-            'mountpoint': path,
-            'identifier': mount['identifier'],
-            'fstype': 'nfs',
-            'options': mount_options,
-        })
 
     if mount_addresses:
         template_context = {
@@ -137,4 +204,3 @@ def nfs_relation_changed():
         os.remove(EXPORT_FILENAME)
 
     set_flag('refresh_nfs_mounts')
-    mount_interface.configure(mount_responses)
