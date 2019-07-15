@@ -29,7 +29,7 @@ in the local data location.
 	juju deploy nfs
 	juju deploy mysql
 	juju deploy owncloud
-	juju add-relation mysql:owncloud
+	juju add-relation mysql owncloud
 	juju add-relation nfs:nfs owncloud:shared-fs
 
 The above example deploys OwnCloud personal cloud storage, and provides remote storage via the NFS host.
